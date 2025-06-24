@@ -66,10 +66,12 @@ async function getPostDates(page, link) {
   for (let i = 0; i < 5; i++) {
     await page.evaluate(() => {
       window.scrollBy(0, window.innerHeight);
+      console.log("scrolling #"+i);
     });
     await new Promise(resolve => setTimeout(resolve, 500));
   };
   await new Promise(resolve => setTimeout(resolve, 10000));
+  comsole.log("Scrolled");
   const data = await page.evaluate(() => {
     const items = Array.from(document.querySelectorAll('a[href*="/reel/"]'));
     return items.map(a => {
@@ -81,6 +83,7 @@ async function getPostDates(page, link) {
       };
     });
   });
+  console.log(JSON.stringify(data, null, 2));
   const hrefArray = data.map(item => item.href);
   
   return hrefArray;
