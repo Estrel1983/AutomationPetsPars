@@ -16,16 +16,7 @@ app.post('/run', async (req, res) => {
 
   try {
     console.log(username, password, profileUrl);
-  //  const result = await runStats(username, password, profileUrl);
-    const result = {
-    success: true,
-    message: "Это тестовый результат",
-    data: {
-      user: username,
-      profile: profileUrl,
-      stats: [1, 2, 3]
-    }
-  };
+    const result = await runStats(username, password, profileUrl);
     console.log("RESULT EXISTS \n" + JSON.stringify(result, null, 2));
     res.json(result);
   } catch (err) {
