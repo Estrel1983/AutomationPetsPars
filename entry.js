@@ -12,11 +12,22 @@ app.post('/run', async (req, res) => {
 
   try {
     console.log(username, password, profileUrl);
-    const result = await runStats(username, password, profileUrl);
+  //  const result = await runStats(username, password, profileUrl);
+    const result = {
+    success: true,
+    message: "Это тестовый результат",
+    data: {
+      user: username,
+      profile: profileUrl,
+      stats: [1, 2, 3]
+    }
+  };
     console.log("RESULT EXISTS \n" + JSON.stringify(result, null, 2));
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.toString() });
   }
 });
-app.listen(3000, () => console.log('Listening on port 3000'));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
