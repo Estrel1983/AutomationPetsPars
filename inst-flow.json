@@ -1,0 +1,886 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "313f17cc-10a9-4aad-af47-96095495e651",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nD6W0V0eCp9PcVuyycp3fjPMmdfFSzTd0_OlX2sVqZc",
+          "mode": "list",
+          "cachedResultName": "competitors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nD6W0V0eCp9PcVuyycp3fjPMmdfFSzTd0_OlX2sVqZc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Лист1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nD6W0V0eCp9PcVuyycp3fjPMmdfFSzTd0_OlX2sVqZc/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        220,
+        0
+      ],
+      "id": "cccaeb82-ecde-4807-b089-20d871c0b8ba",
+      "name": "ListOfStores",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "oyPVph0QQfJiFoi2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\nconst result = {};\nfor (const item of input){\n  const name = item.json[\"Brand name\"];\n  const inst = item.json[\"instagram\"];\n  if(inst && inst.trim() !== \"\"){\n    result[name] = inst;\n  }\n}\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "5478e341-50a9-4d83-8163-40cf062ddfa6",
+      "name": "MapStoresInstagram"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\nconst result = [];\n\nfor (const [brand, instagram] of Object.entries(input)) {\n  result.push({ json: { brand, instagram } });\n}\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "54c5206c-b38d-44d8-b882-8c39b36e3e13",
+      "name": "ArrayToShopItems"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        0
+      ],
+      "id": "a96f236b-6cdc-448a-a209-a43aaa8f4699",
+      "name": "LoopOverBrands"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://puppeteer:3000/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "username",
+              "value": "shmyrovyury"
+            },
+            {
+              "name": "password",
+              "value": "jjj2FGRretail@"
+            },
+            {
+              "name": "profileUrl",
+              "value": "https://www.instagram.com/zestypaws/"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 1800000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        100
+      ],
+      "id": "39628687-b078-4368-97fb-806df89434ff",
+      "name": "Calling Instagram-parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = items[0].json;\n\nconst reelsMap = new Map(\n  item.reels.map(r => [`https://www.instagram.com${r.href}`, r.views])\n);\n\nconst updatedPostInfo = {};\n\nfor (const [url, info] of Object.entries(item.postInfo)) {\n  updatedPostInfo[url] = {\n    ...info,\n    views: reelsMap.get(url) || 'не рилс'\n  };\n}\n\nreturn [\n  {\n    json: {\n      ...item,\n      postInfo: updatedPostInfo\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        100
+      ],
+      "id": "8f707204-34c8-460f-aa29-0f02f26deac3",
+      "name": "PostInfoEnricher"
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3380,
+        160
+      ],
+      "id": "279fb4e4-b5b6-4bf1-be56-7a8a9a4a7d8d",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const postInfo = $input.first().json.postInfo;\nconst output = [];\n\nfor (const [url, data] of Object.entries(postInfo)) {\n  output.push({\n    json: {\n      url,\n      description: data.description,\n      datetime: data.datetime,\n      views: data.views\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        100
+      ],
+      "id": "ca5a4c9e-d4cc-45ee-a025-c0332e0055c2",
+      "name": "SplitPostInfoToSingle"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3860,
+        480
+      ],
+      "id": "3c4d5740-4c52-4930-9126-7f59c7e5c0ef",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zVKMVYMXiXoA81In",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Сгенерировать summery для поля {{ $json.description }}. Не более 10 слов о чем пост. На том же языке что и сам пост.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        3860,
+        240
+      ],
+      "id": "4b3a192b-76c4-4f2f-abe3-77355af7f63a",
+      "name": "SummeryAgent",
+      "notes": "Вернуть summery"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1780,
+        380
+      ],
+      "id": "821f8b17-b95b-491d-8ba2-3c281d86a799",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4000,
+        620
+      ],
+      "id": "2d7fb9ae-1259-4d47-8918-51fefa6884a1",
+      "name": "MergeAiAnswerToItem"
+    },
+    {
+      "parameters": {
+        "jsCode": "const [item1, item2] = items;\n\nlet outputItem = item1.json.output ? item1 : item2;\nlet dataItem = item1.json.output ? item2 : item1;\n\nreturn [\n  {\n    json: {\n      summary: outputItem.json.output?.trim(),\n      url: dataItem.json.url,\n      description: dataItem.json.description,\n      datetime: dataItem.json.datetime,\n      views: dataItem.json.views\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4220,
+        620
+      ],
+      "id": "73cf2c26-7dc8-4839-9bdd-d984a86f2c68",
+      "name": "MergeToOneItem"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      allPosts: items.map(item => item.json)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        380
+      ],
+      "id": "e033bf0f-09d1-4efa-9d62-53b0a2638eb0",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nD6W0V0eCp9PcVuyycp3fjPMmdfFSzTd0_OlX2sVqZc",
+          "mode": "list",
+          "cachedResultName": "competitors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nD6W0V0eCp9PcVuyycp3fjPMmdfFSzTd0_OlX2sVqZc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.url.split('/').slice(0, 4).join('/') }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "summary": "={{ $json.summary }}",
+            "url": "={{ $json.url }}",
+            "description": "={{ $json.description }}",
+            "datetime": "={{ $json.datetime }}",
+            "views": "={{ $json.views }}",
+            "colab": "={{ $json.colab }}",
+            "tegs": "={{ $json.tegs }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "datetime",
+              "displayName": "datetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "views",
+              "displayName": "views",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "colab",
+              "displayName": "colab",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tegs",
+              "displayName": "tegs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        5320,
+        620
+      ],
+      "id": "d49c8039-bdef-48e0-a8bd-006f7e4b3b3a",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "oyPVph0QQfJiFoi2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "1nD6W0V0eCp9PcVuyycp3fjPMmdfFSzTd0_OlX2sVqZc",
+          "mode": "list",
+          "cachedResultName": "competitors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nD6W0V0eCp9PcVuyycp3fjPMmdfFSzTd0_OlX2sVqZc/edit?usp=drivesdk"
+        },
+        "title": "={{ $json.posts[0].split('/').slice(0, 4).join('/') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1900,
+        -340
+      ],
+      "id": "4e514012-822b-4d92-8fc6-6bbd5fc1fee9",
+      "name": "AddCurrentCompanyList",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "oyPVph0QQfJiFoi2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2580,
+        -320
+      ],
+      "id": "0cd17867-945c-49bd-9f7a-9a73aee32a0a",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5743f0a1-3212-4242-8481-ab3512936517",
+              "leftValue": "={{ $json.datetime }}",
+              "rightValue": "={{ $today.minus(7, 'days') }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2220,
+        100
+      ],
+      "id": "9960d853-dff9-4e72-a1a4-f7d3aba08f04",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const url = item.json.url;\n  const description = item.json.description;\n\n  // 1. Получаем имя из URL\n  const matchUrl = url.match(/instagram\\.com\\/([^\\/]+)/);\n  const accountFromUrl = matchUrl ? matchUrl[1] : '';\n\n  // 2. Получаем имя из description после \"comments -\"\n  const matchDesc = description.match(/comments\\s*-\\s*([^\\s]+)/);\n  const accountFromDesc = matchDesc ? matchDesc[1] : '';\n\n  // 3. Сравниваем и добавляем \"colab\"\n  const colab = accountFromDesc && accountFromDesc !== accountFromUrl ? accountFromDesc : '';\n\n  item.json.colab = colab;\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4440,
+        620
+      ],
+      "id": "3b2461fd-f69a-4f40-b3c5-b23a7c5e1122",
+      "name": "CollabSetter"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const description = item.json.description;\n\n  // Найти все хэштеги — слова, начинающиеся с #\n  const hashtags = description.match(/#[\\wа-яА-ЯёЁ]+/g) || [];\n\n  // Объединить в одну строку с пробелами\n  item.json.tegs = hashtags.join(' ');\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4660,
+        620
+      ],
+      "id": "12f0fea0-e738-4b6c-afeb-f55419cb6fc7",
+      "name": "HashTagsSetter"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const date = new Date(item.json.datetime);\n\n  const day = date.getUTCDate();\n  const year = date.getUTCFullYear();\n  const monthNames = [\n    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',\n    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'\n  ];\n  const month = monthNames[date.getUTCMonth()];\n\n  // Формируем строку, например: \"17 июня 2025\"\n  item.json.datetime = `${day} ${month} ${year}`;\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4880,
+        620
+      ],
+      "id": "6948378f-7f69-4e4e-81bb-71003440258a",
+      "name": "DateChangerToRussianFormat"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const rawViews = item.json.views.toString().trim().toLowerCase();\n\n  let views = 0;\n\n  if (rawViews.endsWith('k')) {\n    // Пример: \"14k\" → 14000\n    const numberPart = parseFloat(rawViews.replace('k', ''));\n    views = Math.round(numberPart * 1000);\n  } else {\n    // Убираем запятые, пробелы и превращаем в число\n    views = parseInt(rawViews.replace(/[, ]/g, ''), 10);\n  }\n\n  item.json.views = views;\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5100,
+        620
+      ],
+      "id": "6273b478-98d8-41ed-bd5d-28bb0668f9ed",
+      "name": "ViewsToNumber"
+    }
+  ],
+  "pinData": {
+    "SummeryAgent": [
+      {
+        "json": {
+          "output": "This is summery"
+        }
+      }
+    ],
+    "Calling Instagram-parser": [
+      {
+        "json": {
+          "posts": [
+            "https://www.instagram.com/zestypaws/reel/DLCzy7WvF_m/",
+            "https://www.instagram.com/zestypaws/reel/DLPryuPs9K2/",
+            "https://www.instagram.com/zestypaws/reel/DLNG_36oZyY/",
+            "https://www.instagram.com/zestypaws/reel/DLKiIIToKmt/",
+            "https://www.instagram.com/zestypaws/reel/DLFzMrpvbzz/",
+            "https://www.instagram.com/zestypaws/reel/DLAO9ZgNgli/",
+            "https://www.instagram.com/zestypaws/reel/DK-2uE0sLMn/",
+            "https://www.instagram.com/zestypaws/reel/DK9qKpGBovc/",
+            "https://www.instagram.com/zestypaws/reel/DK7FcMEqBM1/",
+            "https://www.instagram.com/zestypaws/reel/DK4dNKrshlh/"
+          ],
+          "reels": [
+            {
+              "href": "/zestypaws/reel/DLPryuPs9K2/",
+              "views": "22"
+            },
+            {
+              "href": "/zestypaws/reel/DLNG_36oZyY/",
+              "views": "42"
+            },
+            {
+              "href": "/zestypaws/reel/DLKiIIToKmt/",
+              "views": "36"
+            },
+            {
+              "href": "/zestypaws/reel/DLFzMrpvbzz/",
+              "views": "17.9K"
+            },
+            {
+              "href": "/zestypaws/reel/DLCzy7WvF_m/",
+              "views": "450"
+            },
+            {
+              "href": "/zestypaws/reel/DLAO9ZgNgli/",
+              "views": "6,677"
+            },
+            {
+              "href": "/zestypaws/reel/DK-2uE0sLMn/",
+              "views": "353"
+            },
+            {
+              "href": "/zestypaws/reel/DK9qKpGBovc/",
+              "views": "1,324"
+            },
+            {
+              "href": "/zestypaws/reel/DK7FcMEqBM1/",
+              "views": "1,237"
+            },
+            {
+              "href": "/zestypaws/reel/DK4dNKrshlh/",
+              "views": "4,980"
+            },
+            {
+              "href": "/zestypaws/reel/DK172gKNniF/",
+              "views": "6,291"
+            },
+            {
+              "href": "/zestypaws/reel/DKzXB4hIvKp/",
+              "views": "3,291"
+            }
+          ],
+          "postInfo": {
+            "https://www.instagram.com/zestypaws/reel/DLCzy7WvF_m/": {
+              "description": "45 likes, 2 comments - Petunya on June 18, 2025: \"Drumroll, please… 🥁 The search is over, and we’re thrilled to announce that our first ever Chief Taste Officer is none other than the fabulous, the fierce, the flavor-forward diva herself: Zsa Zsa (@pinkyandtheb)! 🐾\n\nWith her larger-than-life paw-sonality, a taste for the finer treats, and an eye for the Zesty things in life, she’ll be sniffing out all the best bites and leading our pack in style. Welcome to the team, Zsa Zsa! 🧡\". ",
+              "datetime": "2025-06-18T13:31:26.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DLPryuPs9K2/": {
+              "description": "22 likes, 0 comments - Petunya on June 23, 2025: \"Summer fun starts with feeling good from the inside out. ☀️🧡Zesty Paws Probiotics help support digestive health and immunity, so your bestie stays happy and ready for any adventure.\n.\n.\n#PetParent #ZestyPaws #PetCare #Dog #DogHealth #DogTips\". ",
+              "datetime": "2025-06-23T13:31:36.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DLNG_36oZyY/": {
+              "description": "42 likes, 0 comments - Petunya on June 22, 2025: \"Your senior dog’s calm shouldn’t be a gamble. Zesty Paws® Calming Bites™ are packed with soothing support so your older pup can enjoy peaceful naps, calm walks, and zero drama. Why? Because retirement should be stress-free, not stress-full.\n.\n.\n #PetParent #ZestyPaws #PetCare #Dog #DogHealth #DogTreats\". ",
+              "datetime": "2025-06-22T13:31:43.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DLKiIIToKmt/": {
+              "description": "36 likes, 7 comments - zestypaws on June 21, 2025: \"Fireworks shouldn’t feel like the apocalypse to your four-legged friend. That’s why our Calming Bites™ are made with ingredients that support calm, cool, and collected vibes – even when the block party starts sounding like a drumline!\n.\n.\n#PetParent #ZestyPaws #PetCare #Dog #DogHealth #DogTreats\". ",
+              "datetime": "2025-06-21T13:31:06.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DLFzMrpvbzz/": {
+              "description": "18K likes, 451 comments - jarellcarter on June 19, 2025: \"I think Dootie was trying to tell me something I should’ve listened 🥴\n\nLink in bio for @zestypaws \n\n#challenge #mobility #mobilitychallenge #calisthenics #flexibility #corestrength #core #mobilityexercises #calisthenicsworkout #dogsofinstagram #zestypawspartner\". ",
+              "datetime": "2025-06-19T17:25:35.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DLAO9ZgNgli/": {
+              "description": "115 likes, 3 comments - Petunya on June 17, 2025: \"They say one man’s trash is another cat’s treasure 📦\n.\n.\n#PetParent #ZestyPaws #PetCare #Cat #CatMeme #CatsofInstagram\". ",
+              "datetime": "2025-06-17T13:31:03.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DK-2uE0sLMn/": {
+              "description": "353 likes, 56 comments - drmollysays on June 16, 2025: \"WHAT IS IT?  Zesty Paw’s Healthy Aging Supplement contains Niagen™, the NAD+ precursor, which means it can help increase NAD+ levels in your aging dog. #ad\n\nWHY GIVE IT? NAD+ is  a molecule that supports cellular function, energy and bodily repair mechanisms and there is growing research about how increasing NAD+ levels in both humans and animals can help them age better as it can provide metabolic, brain, heart and skeletal muscle support.\n\nHOW IS IT GIVEN? Healthy Aging Available in two formats: (1) a capsule paired with a probiotic pill wrap paste and (2) a powder sachet you can pour, mix, and serve. \n\nWHERE DO YOU GET IT? Comment AGE and I will send you a link to order Zesty Paw’s Healthy Aging Supplement. \n\n#zestypawspartner #healthyaging #niagen #NAD+ #veterinary #veterinarian\". ",
+              "datetime": "2025-06-17T00:42:06.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DK9qKpGBovc/": {
+              "description": "49 likes, 1 comments - zestypaws on June 16, 2025: \"If your dog’s favorite sport is chillin’, our Vet Strength™ Weight Management Bites can help support weight goals for the most dedicated couch potatoes.\n.\n.\n#Corgi #CorgisofInstagram #PetParent #ZestyPaws #PetCare #Dog #DogHealth\". ",
+              "datetime": "2025-06-16T13:31:23.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DK7FcMEqBM1/": {
+              "description": "43 likes, 3 comments - zestypaws on June 15, 2025: \"Father’s Day feels like the perfect time for a very official Dog Dad performance review. There’s just something special about the bond between a pup and their favorite human, especially the one who always shows up when it counts (treat time). How would your bestie’s Dog Dad rate?\n.\n.\n#FathersDay #DogDad #ZestyPaws #MobilityBites #PetCare #PetParent\". ",
+              "datetime": "2025-06-15T13:31:47.000Z"
+            },
+            "https://www.instagram.com/zestypaws/reel/DK4dNKrshlh/": {
+              "description": "33 likes, 1 comments - zestypaws on June 14, 2025: \"Helping your dog stay at a healthy weight doesn’t have to be overwhelming. 🐶💪 With ingredients like L-Carnitine, fiber, and postbiotics, Zesty Paws Vet Strength™ Weight Management Bites offer a simple, effective solution to help your pup stay healthy and active. #PetParent #ZestyPaws #PetCare #Dog #DogHealth #DogTreats\". ",
+              "datetime": "2025-06-14T13:01:46.000Z"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "ListOfStores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ListOfStores": {
+      "main": [
+        [
+          {
+            "node": "MapStoresInstagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MapStoresInstagram": {
+      "main": [
+        [
+          {
+            "node": "ArrayToShopItems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ArrayToShopItems": {
+      "main": [
+        [
+          {
+            "node": "LoopOverBrands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LoopOverBrands": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Calling Instagram-parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calling Instagram-parser": {
+      "main": [
+        [
+          {
+            "node": "PostInfoEnricher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostInfoEnricher": {
+      "main": [
+        [
+          {
+            "node": "AddCurrentCompanyList",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SplitPostInfoToSingle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SummeryAgent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "MergeAiAnswerToItem",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "SplitPostInfoToSingle": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SummeryAgent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SummeryAgent": {
+      "main": [
+        [
+          {
+            "node": "MergeAiAnswerToItem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MergeAiAnswerToItem": {
+      "main": [
+        [
+          {
+            "node": "MergeToOneItem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MergeToOneItem": {
+      "main": [
+        [
+          {
+            "node": "CollabSetter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "LoopOverBrands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AddCurrentCompanyList": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CollabSetter": {
+      "main": [
+        [
+          {
+            "node": "HashTagsSetter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HashTagsSetter": {
+      "main": [
+        [
+          {
+            "node": "DateChangerToRussianFormat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DateChangerToRussianFormat": {
+      "main": [
+        [
+          {
+            "node": "ViewsToNumber",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ViewsToNumber": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dcab7c61-c8ca-4f98-ab15-3945f926aa94",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4fc37ef1f77436612534221a36cadae19ebd44a7ee928117c3244eb4d4c56179"
+  },
+  "id": "sYsYPfHbZeqMET1u",
+  "tags": []
+}
