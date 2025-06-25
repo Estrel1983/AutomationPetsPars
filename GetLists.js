@@ -4,8 +4,14 @@ const InstagramStats = require('./InstagramStats');
 async function getInst(username, password, targetChannel) {
   const browser = await puppeteer.launch({
     headless: true, // без окна
-    args: ['--no-sandbox', '--disable-setuid-sandbox','--disable-blink-features=AutomationControlled',
-    '--disable-dev-shm-usage']
+    args: ['--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--no-zygote',
+    '--disable-accelerated-2d-canvas',
+    '--disable-web-security'],
+  protocolTimeout: 60000
   });
 
   const page = await browser.newPage();
