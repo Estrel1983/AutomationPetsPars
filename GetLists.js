@@ -60,8 +60,19 @@ async function getInst(username, password, targetChannel) {
 }
 
 async function getPostDates(page, link) {
+  const blocked = ['image', 'stylesheet', 'font', 'media'];
+
+  await page.setRequestInterception(true);
+
+  page.on('request', request => {
+    if (blocked.includes(request.resourceType())) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
   console.log("in getPostDates " + link);
-  await page.goto(link, { timeout: 60000 });
+  await page.goto(link, { timeout: 10000 });
   console.log("Before resolve");
   await new Promise(resolve => setTimeout(resolve, 1000));
   console.log("before for");
@@ -95,7 +106,18 @@ async function getPostDates(page, link) {
 }
 
 async function getReelsDatas(page, link){
-  await page.goto(link, { timeout: 60000 });
+  const blocked = ['image', 'stylesheet', 'font', 'media'];
+
+  await page.setRequestInterception(true);
+
+  page.on('request', request => {
+    if (blocked.includes(request.resourceType())) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+  await page.goto(link, { timeout: 10000 });
   await new Promise(resolve => setTimeout(resolve, 1000));
   for (let i = 0; i < 3; i++) {
     await page.evaluate(() => {
