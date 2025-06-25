@@ -69,7 +69,7 @@ async function getPostDates(page, link) {
   console.error("Page is not initialized");
   }
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     await page.evaluate(() => {
       window.scrollBy(0, window.innerHeight);
     });
@@ -97,7 +97,7 @@ async function getPostDates(page, link) {
 async function getReelsDatas(page, link){
   await page.goto(link, { timeout: 60000 });
   await new Promise(resolve => setTimeout(resolve, 1000));
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     await page.evaluate(() => {
       window.scrollBy(0, window.innerHeight);
     });
