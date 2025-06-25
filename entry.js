@@ -2,6 +2,13 @@ const express = require('express')
 const { runStats } = require('./script');
 
 const app = express();
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', err => {
+  console.error('Uncaught Exception:', err);
+});
 app.use(express.json());
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);

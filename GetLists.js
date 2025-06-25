@@ -62,16 +62,21 @@ async function getInst(username, password, targetChannel) {
 async function getPostDates(page, link) {
   console.log("in getPostDates " + link);
   await page.goto(link, { timeout: 60000 });
+  console.log("Before resolve");
   await new Promise(resolve => setTimeout(resolve, 1000));
+  console.log("before for");
+  if (!page) {
+  console.error("Page is not initialized");
+  }
+
   for (let i = 0; i < 5; i++) {
     await page.evaluate(() => {
       window.scrollBy(0, window.innerHeight);
-      console.log("scrolling #"+i);
     });
     await new Promise(resolve => setTimeout(resolve, 500));
   };
   await new Promise(resolve => setTimeout(resolve, 10000));
-  comsole.log("Scrolled");
+  console.log("Scrolled");
   const data = await page.evaluate(() => {
     const items = Array.from(document.querySelectorAll('a[href*="/reel/"]'));
     return items.map(a => {
