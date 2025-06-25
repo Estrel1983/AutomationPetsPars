@@ -53,16 +53,6 @@ async function getInst(username, password, targetChannel) {
   
   await new Promise(resolve => setTimeout(resolve, 10000));
 
-  const blocked = ['image', 'stylesheet', 'font', 'media'];
-  await page.setRequestInterception(true);
-
-  page.on('request', request => {
-    if (blocked.includes(request.resourceType())) {
-      request.abort();
-    } else {
-      request.continue();
-    }
-  });
   const postStat = await getPostDates(page, targetChannel);
   const reelsStat = await getReelsDatas(page, targetChannel +'reels/');
   await browser.close();
@@ -72,6 +62,16 @@ async function getInst(username, password, targetChannel) {
 
 async function getPostDates(page, link) {
   console.log("in getPostDates " + link);
+  const blocked = ['image', 'stylesheet', 'font', 'media'];
+  await page.setRequestInterception(true);
+  page.removeAllListeners('request');
+  page.on('request', request => {
+    if (blocked.includes(request.resourceType())) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
   await page.goto(link, { timeout: 10000 });
   console.log("Before resolve");
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -106,6 +106,16 @@ async function getPostDates(page, link) {
 }
 
 async function getReelsDatas(page, link){
+    const blocked = ['image', 'stylesheet', 'font', 'media'];
+  await page.setRequestInterception(true);
+  page.removeAllListeners('request');
+  page.on('request', request => {
+    if (blocked.includes(request.resourceType())) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
   await page.goto(link, { timeout: 10000 });
   await new Promise(resolve => setTimeout(resolve, 1000));
   for (let i = 0; i < 3; i++) {
