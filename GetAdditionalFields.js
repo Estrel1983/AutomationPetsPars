@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 
 async function getAdditionalFields(linkArray){
   const browser = await puppeteer.launch({
-    headless: true, // без окна
+    headless: 'new', // без окна
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 

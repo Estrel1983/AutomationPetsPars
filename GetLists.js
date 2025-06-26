@@ -1,9 +1,10 @@
 const puppeteer = require('puppeteer');
 const InstagramStats = require('./InstagramStats');
+const e = require('express');
 
 async function getInst(username, password, targetChannel) {
   const browser = await puppeteer.launch({
-    headless: true, // без окна
+    headless: 'new', // без окна
     args: ['--no-sandbox',
     '--disable-setuid-sandbox',
     '--disable-dev-shm-usage',
@@ -39,10 +40,7 @@ async function getInst(username, password, targetChannel) {
   await page.waitForNavigation({ timeout: 15000 }).catch(() => {
   console.log('Navigation timeout — fallback to manual wait');
 });
-//   await Promise.all([
-//   page.click('button[type="submit"]'),
-//   page.waitForNavigation({ waitUntil: 'networkidle2' }),
-// ]);
+
   console.log("submiting login");
 
   await page.waitForSelector('button');
@@ -78,7 +76,12 @@ async function getPostDates(page, link) {
       request.continue();
     }
   });
-  await page.goto(link, { timeout: 10000 });
+  try {
+    await page.goto(link, { timeout: 10000 });
+    console.log("✅ Страница загружена");
+  } catch (e){
+    console.log("ERROR! Ошибка при загрузке страницы:", e.message);
+  }
   console.log("Before resolve");
   await new Promise(resolve => setTimeout(resolve, 1000));
   console.log("before for");
