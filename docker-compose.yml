@@ -9,6 +9,8 @@ services:
     # Если нужно взаимодействие между контейнерами
     networks:
       - localnet
+    ports:
+      - "3000:3000"
 
   n8n:
     image: n8nio/n8n

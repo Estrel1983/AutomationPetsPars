@@ -1,5 +1,6 @@
 const express = require('express')
-const { runStats } = require('./script');
+const { runStats} = require('./script');
+const { runNewStats } = require('./script');
 
 require('dotenv').config({ path: __dirname + '/.env' });
 console.log('Loaded env in entry.js, DATABASE_URL:', process.env.DATABASE_URL);
@@ -17,6 +18,32 @@ app.use(express.json());
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
+});
+app.post('/pars', async (req, res) =>{
+  console.log('Starting pars function');
+  const { username, password, profileUrls, dataFrom } = req.body;
+
+  if (!username || !password || !profileUrls || !dataFrom) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  try{
+    const result = await runNewStats(username, password, profileUrls, dataFrom);
+  }catch (err) {
+    res.status(500).json({ error: err.toString() });
+  }
+})
+app.post('/newRun', async (req, res) => {
+  const { username, password, profileUrls, dataFrom } = req.body;
+  if (!username || !password || !profileUrls || !dataFrom){
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  try {
+    const result = await runNewStats(username, password, profileUrls, dataFrom);
+    console.log("RESULT EXISTS \n" + JSON.stringify(result, null, 2));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.toString() });
+  }
 });
 app.post('/run', async (req, res) => {
   const { username, password, profileUrl } = req.body;
